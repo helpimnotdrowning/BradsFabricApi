@@ -6,31 +6,9 @@ plugins {
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
-archivesBaseName = "bfapi"
-group = "com.bb1.fabric"
-version = "1.4.0"
-
-ext {
-	FindFile = { list, curPath, addDirs ->
-		def files = file(curPath).listFiles().sort()
-		files.each {  File file ->
-			if (file.isFile()) {
-				list << file
-			} else {
-				if (addDirs) {
-					list << file
-				}
-				list = FindFile(list, file.path, addDirs) 
-			}
-		}
-		return list
-	}
-}
-
-// build.finalizedBy clean
-
-repositories {
-}
+archivesBaseName = project.archives_base_name
+version = project.mod_version
+group = project.maven_group
 
 dependencies {
 	// To change the versions see the gradle.properties file
@@ -38,31 +16,16 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	
-	modCompileOnly fileTree(dir: "$projectDir/libs/", includes: ['*-dev.jar'])
+	//modCompileOnly fileTree(dir: "$projectDir/libs/", includes: ['*-dev.jar'])
 }
+
 
 loom {
 	accessWidenerPath = file("src/main/resources/bfapi.accesswidener")
 }
 
-build {
-	doLast {
-		println "Automoving build jar files"
-		new File("output/${version}").mkdirs()
-		FindFile([], "output/${version}/", true).each { // if there is any contents already in the file we should delete it
-			it.delete();
-		}
-		fileTree(dir: "$buildDir/libs/", includes: ['*.jar'])
-		.visit { elem ->
-			def newName = elem.file.name.replace("-${version}", "")
-			ant.move(file: elem.file.path, tofile: new File("$projectDir/output/${version}/${newName}"))
-		}
-		println "Complete"
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17
+java {
+	withSourcesJar()
 }
 
 processResources { 
@@ -72,10 +35,6 @@ processResources {
 		expand "version": project.version 
 	} 
 } 
-
-java {
-	withSourcesJar()
-}
 
 jar {
 	from("LICENSE") {
